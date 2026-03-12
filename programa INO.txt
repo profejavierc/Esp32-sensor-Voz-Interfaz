@@ -1,0 +1,61 @@
+/*
+  ESP32 - Lectura de Potenciómetro + Control LED
+  Potenciómetro en GPIO34 (VP) - ADC1_CH6
+  LED en GPIO25
+  
+  Conexiones:
+  - Potenciómetro pin central → GPIO34 (VP)
+  - Potenciómetro pin lateral  → 3.3V
+  - Potenciómetro pin lateral  → GND
+  - LED positivo → GPIO25 (con resistencia 220Ω)
+  - LED negativo → GND
+*/
+
+const int potPin = 34;      // GPIO34 = VP (ADC1_CH6)
+const int ledPin = 25;      // GPIO25 - LED
+
+// PWM para LED (ESP32 usa ledc)
+const int pwmChannel = 0;
+const int pwmFrequency = 5000;
+const int pwmResolution = 8;  // 8 bits: 0-255
+
+void setup() {
+  Serial.begin(115200);
+  
+  // Configurar pin LED como salida
+  pinMode(ledPin, OUTPUT);
+  
+  // Configurar PWM para LED
+  ledcSetup(pwmChannel, pwmFrequency, pwmResolution);
+  ledcAttachPin(ledPin, pwmChannel);
+  
+  // Configurar ADC
+  analogReadResolution(12);           // 12 bits: 0-4095
+  analogSetAttenuation(ADC_11db);     // Rango 0-3.3V
+  
+  Serial.println("ESP32 iniciado - GPIO34: Potenciómetro, GPIO25: LED");
+}
+
+void loop() {
+  // Leer potenciómetro (0 - 4095)
+  int potValue = analogRead(potPin);
+  
+  // Convertir a voltaje
+  float voltage = potValue * (3.3 / 4095.0);
+  
+  // Mapear valor del potenciómetro a PWM del LED (0-255)
+  int brightness = map(potValue, 0, 4095, 0, 255);
+  
+  // Aplicar brillo al LED
+  ledcWrite(pwmChannel, brightness);
+  
+  // Mostrar en monitor serial
+  Serial.print("ADC: ");
+  Serial.print(potValue);
+  Serial.print(" | Voltaje: ");
+  Serial.print(voltage, 2);
+  Serial.print("V | LED PWM: ");
+  Serial.println(brightness);
+  
+  delay(100);
+}
